@@ -283,13 +283,13 @@ indexDilemmaMod <- function(x, self, ideal,
     needs.to.invert[c1] <- FALSE
     needs.to.invert[c2] <- FALSE
     }
-    print(paste(needs.to.invert,s[c1,self],s[c2,self])) # Diego debug printout of variables
+    #print(paste(needs.to.invert,s[c1,self],s[c2,self])) # Diego debug printout of variables
   }
   # New: invert construct label poles if needed
   needs.to.invert[is.na(needs.to.invert)] <- F
-  print(needs.to.invert)
-  print(nc)
-  print(is.na(needs.to.invert))
+  #print(needs.to.invert)
+  #print(nc)
+  #print(is.na(needs.to.invert))
   
   leftpole <- get.pole(x, 'left')
   rightpole <- get.pole(x, 'right')
