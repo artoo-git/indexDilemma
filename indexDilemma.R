@@ -1,18 +1,30 @@
-dilemma<-function (x, self = 1, ideal = ncol(x), diff.mode = 1, diff.congruent = NA, 
-          diff.discrepant = NA, diff.poles = 1, r.min = 0.2, exclude = FALSE, 
-          digits = 2, show = F, output = 1, index = T, trim = 20) 
+indexDilemma <- function(x, self = 1, ideal = ncol(x), 
+                         diff.mode = 1, diff.congruent = NA,
+                         diff.discrepant = NA, diff.poles=1, 
+                         r.min=.34, exclude=FALSE, digits=2, show=F,
+                         output=1, 
+                         index=T, trim=20) # CHANGE: set 'self' and
+                                  # 'ideal' to first and last column
+                                  # respectively
 {
+
+  # automatic selection of a priori criteria
   sc <- getScale(x)
-  if (is.na(diff.congruent)) 
-    diff.congruent <- floor(diff(sc) * 0.25)
-  if (is.na(diff.discrepant)) 
-    diff.discrepant <- ceiling(diff(sc) * 0.6)
-  res <- indexDilemmaMod(x, self = self, ideal = ideal, 
-                              diff.mode = diff.mode, diff.congruent = diff.congruent, 
-                              diff.discrepant = diff.discrepant, diff.poles = diff.poles, 
-                              r.min = r.min, exclude = exclude, digits = digits, index = index, 
-                              trim = trim)
+  if (is.na(diff.congruent))
+    diff.congruent <- floor(diff(sc) * .25)
+  if (is.na(diff.discrepant))
+    diff.discrepant <-  ceiling(diff(sc) * .6)
+  
+  # detect dilemmas
+  res <- indexDilemmaInternal(x, self=self, ideal=ideal, 
+                              diff.mode=diff.mode, diff.congruent=diff.congruent,
+                              diff.discrepant=diff.discrepant, diff.poles=diff.poles,
+                              r.min=r.min, exclude=exclude, digits=digits, 
+                              index=index, trim=trim)
+  
+  # type of output printed to te console
   enames <- getElementNames2(x, trim = trim, index = T)
+  
   if (output == 1) {
     indexDilemmaOut0(res, self, ideal, enames, diff.discrepant, 
                      diff.congruent, exclude, r.min,diff.mode) # added diffmode to print mode in output
@@ -28,6 +40,28 @@ dilemma<-function (x, self = 1, ideal = ncol(x), diff.mode = 1, diff.congruent =
     indexDilemmaShowCorrelationDistribution(x, self, ideal)
   invisible(res)
 }
+
+
+
+######################
+# Pemutation test to test if grid is random.
+# "The null hypothesis [is] that a particular grid 
+# is indis- tinguishable from an array of random numbers" 
+# (Slater, 1976, p. 129).
+#
+randomTest <- function(x){
+  x
+}
+# permutationTest
+# Hartmann 1992: 
+# To illustrate: If a person decided to produce a nonsense grid, 
+# the most appropriate way to achieve this goal would be to rate 
+#(rank) the elements randomly. The variation of the elements on 
+# the con- structs would lack any psychological sense. Every 
+# statistical analysis should then lead to noninterpretable results.
+
+
+# THIS IS FUNCTION IS NEEDED TO OUTPUT DILEMMAS CORRECTLY
 get.pole <- function(grid, pole){
   # NEW : get the label of the pole to invert construct if needed
   names <- function(grid){
@@ -50,12 +84,13 @@ get.pole <- function(grid, pole){
     print('Please, introduce left or right pole')
   }
 }
-indexDilemmaMod <- function(x, self, ideal, 
-                            diff.mode = 1, diff.congruent =1,
-                            diff.discrepant =4, diff.poles =1, 
+
+indexDilemmaInternal <- function(x, self, ideal, 
+                            diff.mode = 1, diff.congruent = 1,
+                            diff.discrepant = 4, diff.poles = 1, 
                             r.min, exclude = FALSE, digits = 2,
                             index = T, trim = FALSE) # CHANGE: set defaults
-  # to RECORD 5.0 defaults
+                                                     # to RECORD 5.0 defaults
 {
   s <- getRatingLayer(x)         # grid scores matrix
   # NEW: To invert constructs
@@ -68,7 +103,7 @@ indexDilemmaMod <- function(x, self, ideal,
   cnames <- getConstructNames2(x, index=index, trim=trim, mode=1, pre="", post=" ")
   
   sc <- getScale(x)
-  midpoint <- (sc[1] + sc[2])/2			# NEW (DIEGO) get scale midpoint this is importat in
+  midpoint <- (sc[1] + sc[2])/2     # NEW (DIEGO) get scale midpoint this is importat in
                                     # when Alejandro's code check whether self/ideal   
                                     # is == to the midpoint or not (see below "Get Dilemmas" section)
   
@@ -85,10 +120,11 @@ indexDilemmaMod <- function(x, self, ideal,
   # CORRECTION (ALEJANDRO): a construct 
   # can't be congruent if it's 'self' score is 4 (AKA self-
   # disorientation). Neither can be congruent if IDEAL is 4.
+  # CORRECTION (Diego): I have just updated this avoid hardcoding the midpoint!!
   if (diff.mode == 1){
     for (i in 1:nc){
-      if (s[,self][i] != 4){
-        if (s[,ideal][i] != 4){
+      if (s[,self][i] != midpoint){
+        if (s[,ideal][i] != midpoint){
           is.congruent[i] <- diff.between[i] <= diff.congruent        
         }
         else{
@@ -123,9 +159,10 @@ indexDilemmaMod <- function(x, self, ideal,
   # type.c.poles[is.neither.p] <- "neither"
   #
   #
-  ###########
-  ## DIEGO ## MIDPOINT-BASED CRITERION TO IDENTIFY CONGRUENT AND DISCREPANT constructs 
-  ########### 
+  ####################################################################################
+  ## MIDPOINT-BASED CRITERION TO IDENTIFY CONGRUENT AND DISCREPANT constructs 
+  ####################################################################################
+  #### added by DIEGO
   #   I have tried to implement here the other popular method for the identification of 
   #   Congruent and Discrepant constructs. This proposed below is that applied by IDIOGRID
   #   software (V.2.3)
@@ -135,6 +172,7 @@ indexDilemmaMod <- function(x, self, ideal,
   #   vice versa). If the two selves are rated on the same side of the scale or if either 
   #   the actual self or the ideal self are rated at the midpoint of the scale, then a discre- 
   #   pancy does not exist." ( from IDIOGRID manual)
+
   else if (diff.mode == 0){
     
     is.congruent <- (s[, self] < midpoint  &  s[, ideal] < midpoint) | 
@@ -148,10 +186,14 @@ indexDilemmaMod <- function(x, self, ideal,
     type.c[is.discrepant] <- "discrepant"
     type.c[is.neither] <- "neither"
   }else {stop("\nNO differentiation method (diff.mode) SELECTED! quitting ..")}
+
   ############## END OF MIDPOINT-BASED CRITERION ####################################
   
+
+
+
   ####################################################################################
-  # DIEGO: This that I have commented now is redundant as the variables are not duplicates 
+  # DIEGO: This that I have commented-out is now redundant as the variables are not duplicates 
   # anymore and are calculated only in their conditional loop. This is more efficient
   # ###################################################################################
   #  if (diff.mode == 1){
@@ -204,12 +246,14 @@ indexDilemmaMod <- function(x, self, ideal,
     # To create a dilemma, the 'self' scores of both contructs must be
     # on the same pole. We have to check for that.
     
-    # DIEGO: 4 is midpoint and is "hardcoded". This is not good if we have a scoring range
+    # REMOVED HARDCODED MIDPOINT
+    # DIEGO: 4 is the midpoint and it was "hardcoded". This is not good if we have a scoring range
     # that is not 1-7 because in that case the midpoint will NOT be 4!
-    # DIEGO: another correction is that in section where the scripts "reorient" the constructs, 
-    # the code is not controlling for self or ideal self to be scored as the midpoint. This causes
-    # the script break. I have added a condition for those combinations equivalent to 
-    # self-score != midpoint
+    #
+    # DIEGO: another bug-fix is that in the section where the scripts "reorient" the constructs:
+    # the code to re-orient the constructs is not controlling for self or ideal self to be scored 
+    # as the midpoint. This causes the script break. I have added a condition for those combinations 
+    # equivalent to self-score != midpoint
     
     if (s[c1, self] != midpoint & s[c2, self] != midpoint){
       if (s[c1, self] > midpoint & s[c2, self] > midpoint) {   
@@ -360,7 +404,9 @@ indexDilemmaOut0 <- function(res, self, ideal, enames,
   cat("\nActual Self Position:", enames[self])               
   cat("\nIdeal Self Position:", enames[ideal])   
   
-  cat("\n\nA Priori Criteria (for classification):")      
+  cat("\n\nA Priori Criteria (for classification):")
+  # differentiation mode 0 for midpoint-based criterion (Grimes - Idiogrid) OR
+  # differentiation mode 1 for Feixas "correlation cut-off" criterion
   if (diff.mode == 1){
     cat("\nDiscrepant Difference: >=", diff.discrepant)
     cat("\nCongruent Difference: <=", diff.congruent)
